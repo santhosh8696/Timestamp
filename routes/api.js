@@ -138,6 +138,7 @@ module.exports = function(app) {
         return reply.id === req.body.reply_id
       })
       if (reply.delete_password === req.body.delete_password) {
+        req.body.reply_id='[deleted]'
         reply.text = '[deleted]'
         await thread.save();
       } else {
