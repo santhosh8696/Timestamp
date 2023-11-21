@@ -2,8 +2,6 @@
 
 const mongodb = require('mongodb');
 const mongoose = require('mongoose');
-const { isValidObjectId } = require("../utils/utils");
-
 
 module.exports = function(app) {
 
@@ -133,45 +131,24 @@ module.exports = function(app) {
   })
 
   app.delete('/api/replies/:board', async (req, res) => {
-    const board = req.params.board;
-    const { thread_id, reply_id, delete_password } = req.body;
-  
-    if (!isValidObjectId(thread_id)) return res.send("Invalid thread_id");
-  
-    if (!isValidObjectId(reply_id)) return res.send("Invalid reply_id");
-  
-    try {
-      const currentThread = await Thread.findOne({
-        board: board,
-        _id: thread_id,
-      });
-  
-      if (!currentThread) return res.send("Thread not found");
-  
-      const updatedReply = await Reply.findByIdAndUpdate(reply_id, {
-        text: "[deleted]",
-      });
-  
-      if (!updatedReply) return res.send("Reply not found");
-  
-      const validPassword = await bcrypt.compare(
-        delete_password,
-        updatedReply.delete_password
-      );
-  
-      if (!validPassword) return res.send("incorrect password");
-  
-      currentThread.replies.forEach(async (reply) => {
-        if (reply._id == reply_id) {
-          reply.text = "[deleted]";
-        }
-      });
-  
-      await Thread.findOneAndReplace({ _id: thread_id }, currentThread);
-  
-      return res.send("success");
-    } catch (err) {
-      res.status(404).send(err);
+    let thread = await Thread.findById(req.body.thread_id)
+
+    if (thread) {
+      let reply = thread.replies.find((reply) => {
+        return reply.id === req.body.reply_id
+      })
+      if (reply.delete_password === req.body.delete_password) {
+        reply.text = '[deleted]'
+        await thread.save();
+      } else {
+        return res.send('incorrect password')
+      }
+      let updatedThread = await thread.save()
+      if (updatedThread) {
+        return res.send('success')
+      }
+    } else {
+      return res.send('incorrect password')
     }
   })
 
