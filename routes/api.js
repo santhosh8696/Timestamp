@@ -138,7 +138,7 @@ module.exports = function(app) {
         return reply.id === req.body.reply_id
       })
       if (reply.delete_password === req.body.delete_password) {
-        reply.text = '[deleted]'
+        reply.id  = '[deleted]'
       } else {
         return res.send('incorrect password')
       }
